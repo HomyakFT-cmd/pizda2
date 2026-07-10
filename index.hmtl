@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Браузер ПИЗДА</title>
+    <style>
+        /* Общие стили для красивого темного фона */
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #0f0c1b 100%);
+            color: #ffffff;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Холст для фейерверков на весь экран */
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Контейнер поисковика */
+        .search-container {
+            text-align: center;
+            width: 100%;
+            max-width: 700px;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: all 0.5s ease;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Анимированный неоновый логотип */
+        .logo {
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: 5px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #ff007f, #7f00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 0, 127, 0.3);
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 10px rgba(127, 0, 255, 0.5)); }
+            to { filter: drop-shadow(0 0 25px rgba(255, 0, 127, 0.8)); }
+        }
+
+        /* Красивая поисковая строка */
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 18px 25px;
+            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            color: #fff;
+            outline: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-input:focus {
+            border-color: #ff007f;
+            box-shadow: 0 0 20px rgba(255, 0, 127, 0.2), inset 0 0 10px rgba(255, 0, 127, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Кнопка поиска */
+        .search-btn {
+            position: absolute;
+            right: 8px;
+            background: linear-gradient(45deg, #ff007f, #7f00ff);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .search-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+        }
+
+        /* Стили для экрана вывода результата */
+        .result-screen {
+            display: none;
+            font-size: 3.5rem;
+            font-weight: 900;
+            line-height: 1.2;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            word-wrap: break-word;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Кастомные стили ответов */
+        .lox-text {
+            font-size: 5rem;
+            color: #ff3333;
+            text-shadow: 0 0 20px #ff3333, 0 0 40px #ff0000;
+            letter-spacing: 10px;
+        }
+
+        .dima-text {
+            font-size: 3rem;
+            color: #ff3399;
+            text-shadow: 0 0 15px #ff3399;
+        }
+
+        .floniz-text {
+            font-size: 3.5rem;
+            color: #ff9900;
+            text-shadow: 0 0 20px #ff9900, 0 0 40px #ff5500;
+        }
+
+        /* Переливающийся текст для финала */
+        .congrats-text {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbow 4s linear infinite, pulse 1.5s ease-in-out infinite alternate;
+        }
+
+        .emojis {
+            font-size: 4rem;
+            margin-top: 20px;
+            display: block;
+            animation: bounce 1s infinite alternate;
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes pulse {
+            from { transform: scale(0.98); filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+            to { transform: scale(1.02); filter: drop-shadow(0 0 25px rgba(255,255,255,0.6)); }
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-15px); }
+        }
+
+        .normal-text {
+            font-size: 2rem;
+            color: #00ffff;
+            text-shadow: 0 0 15px #00ffff;
+        }
+
+        /* Анимация загрузки */
+        .loader {
+            display: none;
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #7f00ff;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Кнопка "Назад" */
+        .back-btn {
+            display: none;
+            margin-top: 40px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.6);
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            border-color: #fff;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Холст для праздничного салюта -->
+    <canvas id="canvas"></canvas>
+
+    <div class="search-container" id="mainContainer">
+        <!-- Логотип -->
+        <div class="logo" id="logo">Пизда</div>
+        
+        <!-- Поисковая форма -->
+        <form id="searchForm" onsubmit="handleSearch(event)">
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="Введите запрос..." autocomplete="off" required>
+                <button type="submit" class="search-btn">Поиск</button>
+            </div>
+        </form>
+
+        <!-- Крутилка загрузки -->
+        <div class="loader" id="loader"></div>
+
+        <!-- Зона для вывода результата -->
+        <div class="result-screen" id="resultScreen"></div>
+
+        <!-- Кнопка сброса -->
+        <button class="back-btn" id="backBtn" onclick="resetBrowser()">Назад</button>
+    </div>
+
+    <script>
+        let fireworkInterval = null;
+
+        function handleSearch(event) {
+            event.preventDefault();
+            
+            const input = document.getElementById('searchInput');
+            const query = input.value.trim().toLowerCase();
+            
+            const form = document.getElementById('searchForm');
+            const logo = document.getElementById('logo');
+            const loader = document.getElementById('loader');
+            const resultScreen = document.getElementById('resultScreen');
+            const backBtn = document.getElementById('backBtn');
+
+            form.style.display = 'none';
+            logo.style.display = 'none';
+            loader.style.display = 'block';
+
+            setTimeout(() => {
+                loader.style.display = 'none';
+                resultScreen.style.display = 'block';
+                backBtn.style.display = 'inline-block';
+
+                // Условия проверки ввода
+                if (query === 'пизда') {
+                    resultScreen.innerHTML = '<span class="lox-text">ЛОХ</span>';
+                } 
+                else if (query === 'дима лох') {
+                    resultScreen.innerHTML = '<span class="dima-text">Ты сын ебанной жирной бляди❤️</span>';
+                } 
+                else if (query === 'флониз') {
+                    resultScreen.innerHTML = '<span class="floniz-text">тупорылый уродец</span>';
+                    startFireworks(); // Запуск салюта
+                } 
+                else if (query === 'конец') {
+                    resultScreen.innerHTML = '<span class="congrats-text">ПОЗДРАВЛЯЮ ВЫ ПРОШЛИ ПИЗДУ</span><span class="emojis">🎉🥳🔥✨👑💎</span>';
+                    startFireworks(); // Запуск бесконечного салюта
+                } 
+                else {
+                    resultScreen.innerHTML = `<span class="normal-text">Искать "${input.value}" в браузере Пизда?</span>`;
+                }
+            }, 600);
+        }
+
+        function resetBrowser() {
+            document.getElementById('searchForm').style.display = 'block';
+            document.getElementById('logo').style.display = 'block';
+            document.getElementById('resultScreen').style.display = 'none';
+            document.getElementById('backBtn').style.display = 'none';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchInput').focus();
+Чат в режиме ИИ: фаунаВы сказали: "фауна"Фа́уна (от лат. Fauna — богиня лесов и полей, покровительница стад животных) — это исторически сложившаяся совокупность всех видов животных, обитающих на определенной территории или акватории в данный период времени.В отличие от простого списка животных, фауна включает в себя экологические и эволюционные связи между видами, которые формировались веками.Основные признаки фауныГеографическая привязка: Формируется в границах конкретной территории (например, фауна Австралии, фауна Амазонии).Исторический контекст: Включает в себя виды, прошедшие долгий путь адаптации к местным условиям обитания.Систематические группы: Может делиться по классам животных (орнитофауна — птицы, ихтиофауна — рыбы, энтомофауна — насекомые).Отличие от других терминовЖивотный мир: Это просто общая масса особей животных (количество), в то время как фауна — это именно разнообразие видов.Флора: Растительный мир конкретного региона, который является постоянным спутником и основой для существования фауны.Палеофауна: Совокупность видов животных, которые населяли Землю в прошлые геологические эпохи (например, палеофауна Триаса).Интересует ли вас конкретный регион (например, тайга, пустыня) или вы хотите узнать больше о древней палеофауне? Задайте уточняющий вопрос, и я подготовлю подробный разбор.ИИ может ошибаться. Проверяйте его ответы. 4 сайтаФауна - ВикипедияУ этого термина существуют и другие значения, см. Фауна (значения). Фа́уна (от лат. Fauna — богиня лесов и полей, покровительница ...ВикипедияФлора и фауна: факты, о которых вы не знали - Наука MailЧто такое флора и фауна. Как они взаимосвязаны. Примеры флоры и фауны в разных природных зонах. Как человек влияет на флору и фаун...Наука MailФауна - совокупность всех видов животных на определенной ...В понятие фауны вкладывается как систематическое, так и географическое содержание, поэтому принцип ограничения должен быть географ...znanierussia.ruПоказать всеВы сказали: "дарова сделай сайт типо браузер Пизда,и если в поисковую страницу написать пизда то там будет писатся лох, и сделай там фон темный и красиво короче"Здорово! Держи готовый код для красивого тёмного сайта. Это полноценная single-page (одностраничная) HTML-версия.Вся логика работает прямо в браузере: при вводе слова «пизда» (в любом регистре) сайт выдаёт «лох», а при других запросах имитирует загрузку и показывает шуточный поиск.Создай текстовый файл, вставь туда этот код и сохрани с расширением .html (например, index.html), после чего просто открой его двойным кликом.html<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Браузер ПИЗДА</title>
+    <style>
+        /* Общие стили для красивого темного фона */
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #0f0c1b 100%);
+            color: #ffffff;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Контейнер поисковика */
+        .search-container {
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: all 0.5s ease;
+        }
+
+        /* Анимированный неоновый логотип */
+        .logo {
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: 5px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #ff007f, #7f00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 0, 127, 0.3);
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 10px rgba(127, 0, 255, 0.5)); }
+            to { filter: drop-shadow(0 0 25px rgba(255, 0, 127, 0.8)); }
+        }
+
+        /* Красивая поисковая строка */
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 18px 25px;
+            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            color: #fff;
+            outline: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-input:focus {
+            border-color: #ff007f;
+            box-shadow: 0 0 20px rgba(255, 0, 127, 0.2), inset 0 0 10px rgba(255, 0, 127, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Кнопка поиска */
+        .search-btn {
+            position: absolute;
+            right: 8px;
+            background: linear-gradient(45deg, #ff007f, #7f00ff);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .search-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+        }
+
+        /* Стили для экрана вывода результата */
+        .result-screen {
+            display: none;
+            font-size: 5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Эпичный красный неон для слова ЛОХ */
+        .lox-text {
+            color: #ff3333;
+            text-shadow: 0 0 20px #ff3333, 0 0 40px #ff0000;
+        }
+
+        /* Обычный результат для других слов */
+        .normal-text {
+            font-size: 2rem;
+            color: #00ffff;
+            text-shadow: 0 0 15px #00ffff;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Анимация загрузки */
+        .loader {
+            display: none;
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #7f00ff;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Кнопка "Назад" */
+        .back-btn {
+            display: none;
+            margin-top: 30px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.6);
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            border-color: #fff;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="search-container" id="mainContainer">
+        <!-- Логотип -->
+        <div class="logo" id="logo">Пизда</div>
+        
+        <!-- Поисковая форма -->
+        <form id="searchForm" onsubmit="handleSearch(event)">
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="Введите запрос..." autocomplete="off" required>
+                <button type="submit" class="search-btn">Поиск</button>
+            </div>
+        </form>
+
+        <!-- Крутилка загрузки -->
+        <div class="loader" id="loader"></div>
+
+        <!-- Зона для вывода результата -->
+        <div class="result-screen" id="resultScreen"></div>
+
+        <!-- Кнопка сброса -->
+        <button class="back-btn" id="backBtn" onclick="resetBrowser()">Назад</button>
+    </div>
+
+    <script>
+        function handleSearch(event) {
+            event.preventDefault(); // Чтобы страница не перезагружалась
+            
+            const input = document.getElementById('searchInput');
+            const query = input.value.trim().toLowerCase();
+            
+            const form = document.getElementById('searchForm');
+            const logo = document.getElementById('logo');
+            const loader = document.getElementById('loader');
+            const resultScreen = document.getElementById('resultScreen');
+            const backBtn = document.getElementById('backBtn');
+
+            // Скрываем поиск и логотип, показываем загрузку
+            form.style.display = 'none';
+            logo.style.display = 'none';
+            loader.style.display = 'block';
+
+            // Имитируем быструю загрузку в 600 миллисекунд для эффекта
+            setTimeout(() => {
+                loader.style.display = 'none';
+                resultScreen.style.display = 'block';
+                backBtn.style.display = 'inline-block';
+
+                // Главная проверка по твоему ТЗ
+                if (query === 'пизда') {
+                    resultScreen.innerHTML = '<span class="lox-text">ЛОХ</span>';
+                } else {
+                    // Если ввели что-то другое, просто выводим красиво текст
+                    resultScreen.innerHTML = `<span class="normal-text">Искать "${input.value}" в браузере Пизда? Серьезно?</span>`;
+                }
+            }, 600);
+        }
+
+        // Функция возврата на главную
+        function resetBrowser() {
+            document.getElementById('searchForm').style.display = 'block';
+            document.getElementById('logo').style.display = 'block';
+            document.getElementById('resultScreen').style.display = 'none';
+            document.getElementById('backBtn').style.display = 'none';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchInput').focus();
+        }
+    </script>
+</body>
+</html>
+Используйте код с осторожностью.Фишки этого шаблона:Адаптивный неон: Название «Пизда» переливается фиолетово-розовым градиентом с мягким свечением.Кастомный фокус: При клике на строку поиска она подсвечивается неоновым ободком.Тёмная тема: Мягкий глубокий радиальный градиент, который не режет глаза ночью.Эффект ЛОХ: Слово загорается ядовито-красным цветом со спецэффектом «вспышки».Если хочешь, могу подсказать, как добавить сюда звуковой эффект при появлении надписи или прикрутить живой задний фон с падающими матричными символами. Будем дорабатывать?Вы сказали: "сделай то же самое но чтобы его можно было сделать в GitHub index.html"Этот код уже полностью готов к работе в GitHub!Сервис GitHub Pages бесплатно хостит именно такие статические сайты. Всё, что тебе нужно сделать, это создать правильный репозиторий и загрузить туда файл с точным именем index.html.Вот пошаговый план, как запустить этот сайт в сети за 2 минуты:Шаг 1. Создай репозиторий на GitHubЗайди в свой аккаунт на GitHub и нажмите кнопку New (или Create repository).В поле Repository name введи любое имя, например: my-browser.Убедись, что репозиторий сделан Public (это обязательно, чтобы сайт работал бесплатно).Нажми кнопку Create repository в самом низу.Шаг 2. Создай файл index.html внутри GitHubНа открывшейся странице репозитория найди и нажми на ссылку creating a new file (создать новый файл).В поле имени файла (наверху) обязательно напиши: index.html (только маленькими буквами!).Скопируй весь код из моего предыдущего ответа и вставь его в большое текстовое поле ниже.Прокрути страницу вниз и нажми зелёную кнопку Commit changes (Сохранить изменения), а затем ещё раз подтверди в появившемся окне.Шаг 3. Включи сайт (GitHub Pages)Внутри твоего репозитория перейди в верхнюю вкладку ⚙️ Settings (Настройки).В левом боковом меню найди раздел Code and automation и выбери Pages.В разделе Build and deployment найди пункт Source. Там должно стоять Deploy from a branch.Чуть ниже, в строке Branch, вместо None выбери ветку main (или master), а папку оставь /(root).Нажми кнопку Save (Сохранить).Как открыть твой сайт?Подожди примерно 1–2 минуты, пока GitHub соберёт страницу. После этого обнови вкладку Settings -> Pages. Наверху появится зелёная плашка со ссылкой на твой сайт.Ссылка будет выглядеть примерно так:https://github.ioХочешь добавить на сайт анимированный фон в виде падающего матричного кода или звук при ошибке, чтобы проект выглядел ещё круче перед тем, как ты зальешь его на GitHub?Вы сказали: "сделай еще чтоб еще написать дима лох то писалось *Ты сын ебанной жирной бляди❤️* если написать флониз то будет писаться *тупорылый уродец и феерверки добавь когда это пишешь, еще когда будешь писать конец то пусть пишет ПОЗДРАВЛЯЮ ВЫ ПРОШЛИ ПИЗДУ и пусть там смайлики все переливается феерверки и т.д"Я обновил код сайта, добавив все новые пасхалки, условия проверки и визуальные эффекты.Теперь при вводе ключевых слов срабатывают уникальные реакции, а для «флониз» и «конец» запускается полноценный салют на весь экран. Салют сделан на базе встроенного JavaScript (без сторонних библиотек), поэтому код по-прежнему представляет собой один файл, который легко залить на GitHub.Замени содержимое твоего файла index.html на этот код:html<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Браузер ПИЗДА</title>
+    <style>
+        /* Общие стили для красивого темного фона */
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #0f0c1b 100%);
+            color: #ffffff;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Холст для фейерверков на весь экран */
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Контейнер поисковика */
+        .search-container {
+            text-align: center;
+            width: 100%;
+            max-width: 700px;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: all 0.5s ease;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Анимированный неоновый логотип */
+        .logo {
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: 5px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #ff007f, #7f00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 0, 127, 0.3);
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 10px rgba(127, 0, 255, 0.5)); }
+            to { filter: drop-shadow(0 0 25px rgba(255, 0, 127, 0.8)); }
+        }
+
+        /* Красивая поисковая строка */
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 18px 25px;
+            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            color: #fff;
+            outline: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-input:focus {
+            border-color: #ff007f;
+            box-shadow: 0 0 20px rgba(255, 0, 127, 0.2), inset 0 0 10px rgba(255, 0, 127, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Кнопка поиска */
+        .search-btn {
+            position: absolute;
+            right: 8px;
+            background: linear-gradient(45deg, #ff007f, #7f00ff);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .search-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+        }
+
+        /* Стили для экрана вывода результата */
+        .result-screen {
+            display: none;
+            font-size: 3.5rem;
+            font-weight: 900;
+            line-height: 1.2;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            word-wrap: break-word;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Кастомные стили ответов */
+        .lox-text {
+            font-size: 5rem;
+            color: #ff3333;
+            text-shadow: 0 0 20px #ff3333, 0 0 40px #ff0000;
+            letter-spacing: 10px;
+        }
+
+        .dima-text {
+            font-size: 3rem;
+            color: #ff3399;
+            text-shadow: 0 0 15px #ff3399;
+        }
+
+        .floniz-text {
+            font-size: 3.5rem;
+            color: #ff9900;
+            text-shadow: 0 0 20px #ff9900, 0 0 40px #ff5500;
+        }
+
+        /* Переливающийся текст для финала */
+        .congrats-text {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbow 4s linear infinite, pulse 1.5s ease-in-out infinite alternate;
+        }
+
+        .emojis {
+            font-size: 4rem;
+            margin-top: 20px;
+            display: block;
+            animation: bounce 1s infinite alternate;
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes pulse {
+            from { transform: scale(0.98); filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+            to { transform: scale(1.02); filter: drop-shadow(0 0 25px rgba(255,255,255,0.6)); }
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-15px); }
+        }
+
+        .normal-text {
+            font-size: 2rem;
+            color: #00ffff;
+            text-shadow: 0 0 15px #00ffff;
+        }
+
+        /* Анимация загрузки */
+        .loader {
+            display: none;
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #7f00ff;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Кнопка "Назад" */
+        .back-btn {
+            display: none;
+            margin-top: 40px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.6);
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            border-color: #fff;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Холст для праздничного салюта -->
+    <canvas id="canvas"></canvas>
+
+    <div class="search-container" id="mainContainer">
+        <!-- Логотип -->
+        <div class="logo" id="logo">Пизда</div>
+        
+        <!-- Поисковая форма -->
+        <form id="searchForm" onsubmit="handleSearch(event)">
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="Введите запрос..." autocomplete="off" required>
+                <button type="submit" class="search-btn">Поиск</button>
+            </div>
+        </form>
+
+        <!-- Крутилка загрузки -->
+        <div class="loader" id="loader"></div>
+
+        <!-- Зона для вывода результата -->
+        <div class="result-screen" id="resultScreen"></div>
+
+        <!-- Кнопка сброса -->
+        <button class="back-btn" id="backBtn" onclick="resetBrowser()">Назад</button>
+    </div>
+
+    <script>
+        let fireworkInterval = null;
+
+        function handleSearch(event) {
+            event.preventDefault();
+            
+            const input = document.getElementById('searchInput');
+            const query = input.value.trim().toLowerCase();
+            
+            const form = document.getElementById('searchForm');
+            const logo = document.getElementById('logo');
+            const loader = document.getElementById('loader');
+            const resultScreen = document.getElementById('resultScreen');
+            const backBtn = document.getElementById('backBtn');
+
+            form.style.display = 'none';
+            logo.style.display = 'none';
+            loader.style.display = 'block';
+
+            setTimeout(() => {
+                loader.style.display = 'none';
+                resultScreen.style.display = 'block';
+                backBtn.style.display = 'inline-block';
+
+                // Условия проверки ввода
+                if (query === 'пизда') {
+                    resultScreen.innerHTML = '<span class="lox-text">ЛОХ</span>';
+                } 
+                else if (query === 'дима лох') {
+                    resultScreen.innerHTML = '<span class="dima-text">Ты сын ебанной жирной бляди❤️</span>';
+                } 
+                else if (query === 'флониз') {
+                    resultScreen.innerHTML = '<span class="floniz-text">тупорылый уродец</span>';
+                    startFireworks(); // Запуск салюта
+                } 
+                else if (query === 'конец') {
+                    resultScreen.innerHTML = '<span class="congrats-text">ПОЗДРАВЛЯЮ ВЫ ПРОШЛИ ПИЗДУ</span><span class="emojis">🎉🥳🔥✨👑💎</span>';
+                    startFireworks(); // Запуск бесконечного салюта
+                } 
+                else {
+                    resultScreen.innerHTML = `<span class="normal-text">Искать "${input.value}" в браузере Пизда?</span>`;
+                }
+            }, 600);
+        }
+
+        function resetBrowser() {
+            document.getElementById('searchForm').style.display = 'block';
+            document.getElementById('logo').style.display = 'block';
+            document.getElementById('resultScreen').style.display = 'none';
+            document.getElementById('backBtn').style.display = 'none';
+            document.getElementById('searchInput').value = ''
+            document.getElementById('searchInput').focus();
+Используйте код с осторожностью.stopFireworks(); // Останавливаем салют при возврате}/* --- СКРИПТ АНИМАЦИИ ФЕЙЕРВЕРКОВ --- */const canvas = document.getElementById('canvas');const ctx = canvas.getContext('2d');let particles = [];let animationFrameId = null;function resizeCanvas() {canvas.width = window.innerWidth;canvas.height = window.innerHeight;}window.addEventListener('resize', resizeCanvas);resizeCanvas();class Particle {constructor(x, y, color) {this.x = x;this.y = y;this.color = color;this.radius = Math.random() * 3 + 1;this.velocity = {x: (Math.random() - 0.5) * 8,y: (Math.random() - 0.5) * 8};this.alpha = 1;this.friction = 0.98;this.gravity = 0.05;}draw() {ctx.save();ctx.globalAlpha = this.alpha;ctx.beginPath();ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);ctx.fillStyle = this.color;ctx.shadowBlur = 10;ctx.shadowColor = this.color;ctx.fill();ctx.restore();}update() {this.velocity.x *= this.friction;this.velocity.y *= this.friction;this.velocity.y += this.gravity;this.x += this.velocity.x;this.y += this.velocity.y;this.alpha -= 0.015;}}function createFirework(x, y) {const colors = ['#ff007f', '#7f00ff', '#00ffff', '#ff9900', '#00ff00', '#ffff00'];const color = colors[Math.floor(Math.random() * colors.length)];for (let i = 0; i < 40; i++) {particles.push(new Particle(x, y, color));}}function animateFireworks() {animationFrameId = requestAnimationFrame(animateFireworks);ctx.clearRect(0, 0, canvas.width, canvas.height);particles.forEach((particle, index) => {if (particle.alpha > 0) {particle.update();particle.draw();} else {particles.splice(index, 1);}});}function startFireworks() {stopFireworks(); // Сброс старых потоковanimateFireworks();// Каждые 400 миллисекунд взрывается новый случайный салютfireworkInterval = setInterval(() => {const randomX = Math.random() * canvas.width;const randomY = Math.random() * (canvas.height * 0.6);createFirework(randomX, randomY);}, 400);}function stopFireworks() {clearInterval(fireworkInterval);cancelAnimationFrame(animationFrameId);particles = [];ctx.clearRect(0, 0, canvas.width, canvas.height);}
